@@ -1,0 +1,32 @@
+{
+  "name": "pogly-oauth-proxy",
+  "version": "1.0.0",
+  "description": "Twitch OAuth proxy for Pogly Standalone",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "prepare": "husky",
+    "lint": "prettier --check 'src/**/*.ts'",
+    "format": "prettier --write 'src/**/*.ts'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MattIPv4/pogly-oauth-proxy.git"
+  },
+  "author": "Matt (IPv4) Cowley",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/MattIPv4/pogly-oauth-proxy/issues"
+  },
+  "homepage": "https://github.com/MattIPv4/pogly-oauth-proxy#readme",
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "prettier": "^3.5.3"
+  },
+  "dependencies": {
+    "tsx": "^4.19.3"
+  }
+}
