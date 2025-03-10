@@ -1,0 +1,17 @@
+services:
+  pogly:
+    image: ghcr.io/poglyapp/pogly:main
+    restart: always
+    ports:
+      - 4000:80/tcp
+    volumes:
+      - pogly-keys:/etc/spacetimedb
+      - pogly-data:/stdb
+      - pogly-config:/root/.spacetime
+    # environment:
+    #   MODULES: "module1 module2"
+
+volumes:
+  pogly-keys:
+  pogly-data:
+  pogly-config:
