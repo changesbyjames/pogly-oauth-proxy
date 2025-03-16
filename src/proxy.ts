@@ -33,6 +33,16 @@ const ws = async (req: FastifyRequest, reply: FastifyReply) => {
   return reply;
 };
 
+const signature = (req: FastifyRequest) =>
+  [
+    req.id,
+    req.method,
+    req.ws && "(WS)",
+    req.url.replace(/\?(.*)token=[^&]+/, "?$1token=[redacted]"),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
 const proxy = async (server: FastifyInstance, opts: Options) => {
   server.decorate(
     "proxy",
@@ -66,7 +76,7 @@ const proxy = async (server: FastifyInstance, opts: Options) => {
   server.all("/*", {
     handler: async (req, reply) => {
       if (req.method === "OPTIONS") {
-        console.log(`${req.id} ${req.method} ${req.url} preflight request`);
+        console.log(`${signature(req)} preflight request`);
         return web(req, reply);
       }
 
@@ -74,12 +84,12 @@ const proxy = async (server: FastifyInstance, opts: Options) => {
 
       const user = req.session.get("user");
       if (!user) {
-        console.log(`${req.id} unauthorized request`);
+        console.log(`${signature(req)} unauthorized request`);
         return reply.status(401).send(new Error("Unauthorized"));
       }
 
       console.log(
-        `${req.id} ${req.method}${req.ws ? " (WS)" : ""} ${req.url} authenticated as ${user.id} (${user.username})`,
+        `${signature(req)} authenticated as ${user.id} (${user.username})`,
       );
 
       if (req.ws) return ws(req, reply);
