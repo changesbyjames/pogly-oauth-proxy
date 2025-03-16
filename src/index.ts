@@ -5,8 +5,6 @@ import { randomUUID } from "node:crypto";
 import { getUser, setUser } from "./database";
 import proxy from "./proxy";
 
-// TODO: https://github.com/fastify/fastify-http-proxy
-
 const {
   TWITCH_CLIENT_ID,
   TWITCH_CLIENT_SECRET,

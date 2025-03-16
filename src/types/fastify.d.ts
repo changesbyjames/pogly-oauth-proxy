@@ -1,5 +1,6 @@
 import type { OAuth2Namespace, OAuth2Token, Token } from "@fastify/oauth2";
 import type { AuthorizationCode } from "simple-oauth2";
+import type httpProxy from "http-proxy";
 
 interface UserinfoResponse {
   aud: string;
@@ -19,6 +20,15 @@ interface TwitchOAuth2 extends OAuth2Namespace {
 declare module "fastify" {
   interface FastifyInstance {
     twitchOauth2: TwitchOAuth2;
+    proxy: httpProxy;
+    proxyRequests: Map<
+      IncomingMessage,
+      {
+        req: FastifyRequest;
+        reply: FastifyReply;
+        hook?: (body: Buffer) => Buffer;
+      }
+    >;
   }
 }
 
