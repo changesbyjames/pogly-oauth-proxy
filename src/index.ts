@@ -182,7 +182,9 @@ server.get("/login/twitch", async (req, reply) => {
 
 await server.register(proxy, {
   host: POGLY_HOST,
-  modules: POGLY_MODULES?.split(" "),
+  modules: POGLY_MODULES?.trim()
+    .split(" ")
+    .map((module) => module.trim()),
 });
 
 server.listen({ port: 3000 }).then((res) => {

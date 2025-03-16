@@ -88,7 +88,10 @@ const proxy = async (server: FastifyInstance, opts: Options) => {
         if (req.method === "GET" && /^\/($|\?)/.test(req.url)) {
           const html = new TextDecoder().decode(body);
           const domain = `ws://${req.host}`;
-          const modules = opts.modules ?? ["pogly"];
+          const modules = (opts.modules ?? ["pogly"]).map((module) => ({
+            domain,
+            module,
+          }));
           return Buffer.from(
             new TextEncoder().encode(
               html.replace(
@@ -96,11 +99,13 @@ const proxy = async (server: FastifyInstance, opts: Options) => {
                 [
                   "<body>",
                   "<script>",
-                  `window.localStorage.setItem("stdbToken", ${JSON.stringify(user.pogly)});`,
-                  `window.localStorage.setItem("stdbConnectDomain", ${JSON.stringify(domain)});`,
-                  `window.localStorage.setItem("stdbConnectModule", ${JSON.stringify(modules[0])});`,
                   `window.localStorage.setItem("nickname", ${JSON.stringify(user.username)});`,
-                  `window.localStorage.setItem("poglyQuickSwap", ${JSON.stringify(JSON.stringify(modules.map((module) => ({ domain, module }))))});`,
+                  `window.localStorage.setItem("stdbToken", ${JSON.stringify(user.pogly)});`,
+                  `const modules = ${JSON.stringify(modules)};`,
+                  `window.localStorage.setItem("poglyQuickSwap", JSON.stringify(modules));`,
+                  `const current = modules.find(({ module }) => module === window.localStorage.getItem("stdbConnectModule"));`,
+                  `window.localStorage.setItem("stdbConnectModule", current ? current.module : modules[0].module);`,
+                  `window.localStorage.setItem("stdbConnectDomain", current ? current.domain : modules[0].domain);`,
                   "</script>",
                 ].join(""),
               ),
