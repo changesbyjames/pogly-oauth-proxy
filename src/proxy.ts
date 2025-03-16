@@ -3,6 +3,7 @@ import {
   type FastifyReply,
   type FastifyInstance,
 } from "fastify";
+import fastifyWebsocket from "@fastify/websocket";
 import httpProxy from "http-proxy";
 
 interface Options {
@@ -19,6 +20,15 @@ const web = async (
   req.server.proxy.web(req.raw, reply.raw, {}, (err) => {
     console.error(`${req.id} failed to proxy`, err);
     reply.send(new Error("Failed to proxy"));
+  });
+  return reply;
+};
+
+const ws = async (req: FastifyRequest, reply: FastifyReply) => {
+  reply.hijack();
+  req.server.proxy.ws(req.raw, req.socket, null, {}, (err) => {
+    console.error(`${req.id} failed to proxy WS`, err);
+    req.socket.destroy();
   });
   return reply;
 };
@@ -69,13 +79,15 @@ const proxy = async (server: FastifyInstance, opts: Options) => {
       }
 
       console.log(
-        `${req.id} ${req.method} ${req.url} authenticated as ${user.id} (${user.username})`,
+        `${req.id} ${req.method}${req.ws ? " (WS)" : ""} ${req.url} authenticated as ${user.id} (${user.username})`,
       );
+
+      if (req.ws) return ws(req, reply);
 
       return web(req, reply, (body) => {
         if (req.method === "GET" && /^\/($|\?)/.test(req.url)) {
           const html = new TextDecoder().decode(body);
-          const domain = opts.host.replace(/^http/, "ws") ?? ""; // TODO: Need to proxy ws
+          const domain = `ws://${req.host}`;
           const modules = opts.modules ?? ["pogly"];
           return Buffer.from(
             new TextEncoder().encode(
@@ -99,6 +111,10 @@ const proxy = async (server: FastifyInstance, opts: Options) => {
       });
     },
   });
+
+  // Enable WS, but after routes are defined
+  // as we want a single handler for both HTTP and WS
+  server.register(fastifyWebsocket);
 };
 
 export default proxy;
