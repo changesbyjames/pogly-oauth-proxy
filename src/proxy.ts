@@ -44,6 +44,8 @@ const signature = (req: FastifyRequest) =>
     .join(" ");
 
 const proxy = async (server: FastifyInstance, opts: Options) => {
+  const modules = opts.modules ?? ["pogly"];
+
   server.decorate(
     "proxy",
     httpProxy.createProxyServer({
@@ -73,14 +75,51 @@ const proxy = async (server: FastifyInstance, opts: Options) => {
     });
   });
 
+  // Static assets require no authentication
+  server.get("/static/*", {
+    handler: async (req, reply) => {
+      console.log(`${signature(req)} static asset request`);
+      return web(req, reply);
+    },
+  });
+
+  // Overlay requires no authentication
+  server.get("/overlay", {
+    handler: async (req, reply) => {
+      console.log(`${signature(req)} overlay request`);
+
+      // Ensure we only allow access to valid modules
+      const url = new URL(req.url, `http://${req.host}`);
+      if (
+        !modules.includes(url.searchParams.get("module") ?? "") ||
+        url.searchParams.get("domain") !== `ws://${req.host}`
+      ) {
+        console.error(`${signature(req)} invalid module`);
+        return reply.status(400).send(new Error("Invalid module"));
+      }
+
+      return web(req, reply);
+    },
+  });
+
+  // Database subscriptions have built-in authentication
+  // TODO: Responses to /identity/websocket_token could be stored in session,
+  //       which could then be validated against ?token (not set for /overlay)
+  server.get("/database/subscribe/*", {
+    handler: async (req, reply) => {
+      console.log(`${signature(req)} database subscription request`);
+      return req.ws ? ws(req, reply) : web(req, reply);
+    },
+  });
+
+  // All other requests require authentication
   server.all("/*", {
     handler: async (req, reply) => {
+      // Except preflight requests which don't have a session
       if (req.method === "OPTIONS") {
         console.log(`${signature(req)} preflight request`);
         return web(req, reply);
       }
-
-      // TODO: Allow overlay route to bypass auth
 
       const user = req.session.get("user");
       if (!user) {
@@ -92,16 +131,12 @@ const proxy = async (server: FastifyInstance, opts: Options) => {
         `${signature(req)} authenticated as ${user.id} (${user.username})`,
       );
 
-      if (req.ws) return ws(req, reply);
-
       return web(req, reply, (body) => {
+        // Inject the user's details and modules into the root HTML response
         if (req.method === "GET" && /^\/($|\?)/.test(req.url)) {
           const html = new TextDecoder().decode(body);
           const domain = `ws://${req.host}`;
-          const modules = (opts.modules ?? ["pogly"]).map((module) => ({
-            domain,
-            module,
-          }));
+          const swap = modules.map((module) => ({ domain, module }));
           return Buffer.from(
             new TextEncoder().encode(
               html.replace(
@@ -111,7 +146,7 @@ const proxy = async (server: FastifyInstance, opts: Options) => {
                   "<script>",
                   `window.localStorage.setItem("nickname", ${JSON.stringify(user.username)});`,
                   `window.localStorage.setItem("stdbToken", ${JSON.stringify(user.pogly)});`,
-                  `const modules = ${JSON.stringify(modules)};`,
+                  `const modules = ${JSON.stringify(swap)};`,
                   `window.localStorage.setItem("poglyQuickSwap", JSON.stringify(modules));`,
                   `const current = modules.find(({ module }) => module === window.localStorage.getItem("stdbConnectModule"));`,
                   `window.localStorage.setItem("stdbConnectModule", current ? current.module : modules[0].module);`,
