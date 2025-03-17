@@ -83,6 +83,15 @@ const proxy = async (server: FastifyInstance, opts: Options) => {
     },
   });
 
+  // SpacetimeDB checks it is alive by sending a ping
+  // When running in a container, it uses the loopback address
+  // So we need to proxy the ping for the server to start properly
+  server.get("/database/ping", {
+    handler: async (req, reply) => {
+      return web(req, reply);
+    },
+  });
+
   // Overlay requires no authentication
   server.get("/overlay", {
     handler: async (req, reply) => {
@@ -92,7 +101,8 @@ const proxy = async (server: FastifyInstance, opts: Options) => {
       const url = new URL(req.url, `http://${req.host}`);
       if (
         !modules.includes(url.searchParams.get("module") ?? "") ||
-        url.searchParams.get("domain") !== `ws://${req.host}`
+        url.searchParams.get("domain") !==
+          `${req.secure() ? "wss" : "ws"}://${req.host}`
       ) {
         console.error(`${signature(req)} invalid module`);
         return reply.status(400).send(new Error("Invalid module"));
@@ -135,7 +145,7 @@ const proxy = async (server: FastifyInstance, opts: Options) => {
         // Inject the user's details and modules into the root HTML response
         if (req.method === "GET" && /^\/($|\?)/.test(req.url)) {
           const html = new TextDecoder().decode(body);
-          const domain = `ws://${req.host}`;
+          const domain = `${req.secure() ? "wss" : "ws"}://${req.host}`;
           const swap = modules.map((module) => ({ domain, module }));
           return Buffer.from(
             new TextEncoder().encode(
