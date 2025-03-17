@@ -42,7 +42,9 @@ const isDatabase = (value: any): value is Database => {
   ]);
 };
 
-const path = new URL("../data.json", import.meta.url);
+const path = process.env.DATA_PATH
+  ? new URL("data.json", process.env.DATA_PATH)
+  : new URL("../data.json", import.meta.url);
 
 const load = async (): Promise<Database> => {
   const data = await readFile(path, "utf8");
