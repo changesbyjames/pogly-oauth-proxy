@@ -10,7 +10,7 @@ env:
 jobs:
   build_proxy:
     name: build proxy
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read
@@ -36,7 +36,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
-            suffix=-${{ github.run_id }}
+            type=sha
             latest=true
 
       - name: Build and push Docker image
