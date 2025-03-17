@@ -5,5 +5,6 @@ COPY package.json package-lock.json tsconfig.json ./
 RUN npm ci
 
 COPY src ./src
+RUN touch .env
 
-CMD ["npx", "tsx", "src/index.ts"]
+CMD ["npm", "start"]
