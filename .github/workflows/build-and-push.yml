@@ -37,6 +37,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
             suffix=-${{ github.run_id }}
+            latest=true
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -44,5 +45,5 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-          tags: ${{ steps.meta.outputs.tags }},latest
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
