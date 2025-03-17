@@ -1,9 +1,9 @@
 FROM node:22-alpine
 
 WORKDIR /usr/app
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json tsconfig.json ./
 RUN npm ci
 
-COPY tsconfig.json src ./
+COPY src ./src
 
-CMD ["npm", "start"]
+CMD ["npx", "tsx", "src/index.ts"]
