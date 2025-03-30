@@ -1,50 +1,12 @@
 This is a proxy that adds Twitch authentication to [Pogly](https://github.com/PoglyApp/pogly-standalone), a real-time collaborative stream overlay.
 
-If you want to develop locally, you can follow the instructions [here](#Developing-locally).
+## Developing locally
 
-## Deploying
+Make sure you're running Node.js matching the version specified in [`.nvmrc`](.nvmrc). Then, install the required dependencies for the project with `npm ci`.
 
-The proxy does not have to run on the same machine as the Pogly server but it's important that access to the Pogly server is not exposed to the internet and only accessible via the proxy otherwise anyone will be able to access & edit the overlay.
+To run the proxy locally, copy [`.env.example`](.env.example) to `.env` and use the [environment variable guide](#Environment-Variables) above to set the variables. Then, start the proxy with `npm start`.
 
-The easiest way to achieve this is by running them together in Docker, such as with Docker Compose:
-
-```yaml
-services:
-  pogly:
-    image: ghcr.io/poglyapp/pogly:main
-    restart: always
-    volumes:
-      - pogly-keys:/etc/spacetimedb
-      - pogly-data:/stdb
-      - pogly-config:/root/.spacetime
-    environment:
-      MODULES: "pogly module2 module3"
-
-  proxy:
-    image: ghcr.io/mattipv4/pogly-oauth-proxy:latest
-    depends_on:
-      - pogly
-    restart: always
-    ports:
-      - 3000:4000/tcp
-    environment:
-      PORT: 4000
-      HOST: 0.0.0.0
-      POGLY_HOST: http://pogly:80
-      DATA_PATH: file:///proxy/
-      SESSION_SECRET: "32_bytes_of_random_hex_data"
-      POGLY_MODULES: "pogly module2 module3"
-      TWITCH_CLIENT_ID: "your_twitch_client_id"
-      TWITCH_CLIENT_SECRET: "your_twitch_client_secret"
-
-    volumes:
-      - ./data.json:/proxy/data.json
-
-volumes:
-  pogly-keys:
-  pogly-data:
-  pogly-config:
-```
+If you don't have a Pogly server running already, you can use the provided [`docker-compose.yaml`](docker-compose.yaml) file in this repository to start one with `docker compose up -d`. If you're using this, make sure the `MODULES` match your `POGLY_MODULES` in the `.env` file.
 
 ## Environment Variables
 
@@ -84,7 +46,7 @@ To allow users to login, you need to add their Twitch user id to the `users` obj
 {
   "users": {
     "1234567890": {
-      "username": "",
+      "username": "TwitchUser",
       "token": ""
     }
   }
@@ -99,12 +61,48 @@ Once the first module is configured, you'll see an option in the UI to swap to a
 
 You can also add new modules at any time -- make sure they're added to both the Pogly `MODULES` environment variable and the proxy's `POGLY_MODULES` environment variable.
 
-## Developing locally
-
-Make sure you're running Node.js matching the version specified in [`.nvmrc`](.nvmrc). Then, install the required dependencies for the project with `npm ci`.
-
-To run the proxy locally, copy [`.env.example`](.env.example) to `.env` and use the [environment variable guide](#Environment-Variables) above to set the variables. Then, start the proxy with `npm start`.
-
-If you don't have a Pogly server running already, you can use the provided [`docker-compose.yaml`](docker-compose.yaml) file in this repository to start one with `docker compose up -d`. If you're using this, make sure the `MODULES` match your `POGLY_MODULES` in the `.env` file.
-
 You'll also need to create a data.json file in the same directory as the docker-compose.yaml file with your twitch user id. You can follow the instructions [here](#datajson) to do this.
+
+## Deploying
+
+The proxy does not have to run on the same machine as the Pogly server but it's important that access to the Pogly server is not exposed to the internet and only accessible via the proxy otherwise anyone will be able to access & edit the overlay.
+
+The easiest way to achieve this is by running them together in Docker, such as with Docker Compose:
+
+```yaml
+services:
+  pogly:
+    image: ghcr.io/poglyapp/pogly:main
+    restart: always
+    volumes:
+      - pogly-keys:/etc/spacetimedb
+      - pogly-data:/stdb
+      - pogly-config:/root/.spacetime
+    environment:
+      MODULES: "pogly module2 module3"
+
+  proxy:
+    image: ghcr.io/mattipv4/pogly-oauth-proxy:latest
+    depends_on:
+      - pogly
+    restart: always
+    ports:
+      - 3000:4000/tcp
+    environment:
+      PORT: 4000
+      HOST: 0.0.0.0
+      POGLY_HOST: http://pogly:80
+      POGLY_MODULES: "pogly module2 module3"
+      DATA_PATH: file:///proxy/
+      SESSION_SECRET: "32_bytes_of_random_hex_data"
+      TWITCH_CLIENT_ID: "your_twitch_client_id"
+      TWITCH_CLIENT_SECRET: "your_twitch_client_secret"
+
+    volumes:
+      - ./data.json:/proxy/data.json
+
+volumes:
+  pogly-keys:
+  pogly-data:
+  pogly-config:
+```
