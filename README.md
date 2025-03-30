@@ -6,7 +6,7 @@ If you want to develop locally, you can follow the instructions [here](#Developi
 
 The proxy does not have to run on the same machine as the Pogly server but it's important that access to the Pogly server is not exposed to the internet and only accessible via the proxy otherwise anyone will be able to access & edit the overlay.
 
-The easiest way to achieve this is by running them together in docker. Here is an example docker compose file:
+The easiest way to achieve this is by running them together in Docker, such as with Docker Compose:
 
 ```yaml
 services:
