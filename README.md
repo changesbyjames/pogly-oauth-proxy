@@ -32,8 +32,6 @@ services:
       HOST: 0.0.0.0
       POGLY_HOST: http://pogly:80
       DATA_PATH: file:///proxy/
-
-      # npx -y @fastify/secure-session | node -e "console.log(fs.readFileSync(0).toString('hex'))"
       SESSION_SECRET: "32_bytes_of_random_hex_data"
       POGLY_MODULES: "pogly module2 module3"
       TWITCH_CLIENT_ID: "your_twitch_client_id"
@@ -54,12 +52,11 @@ The configuration is all done via environment variables. These are the variables
 
 ### POGLY_MODULES
 
-Pogly modules are like different instances of the overlay that can be switched between. Each module can have it's own content & channel. There is no extra permissions to allow or restrict access to each module. If a twitch user has access, they have access to all modules. These need to be the same as the modules in the Pogly server.
+Pogly modules are like different instances of the overlay that can be switched between. Each module can have its own content & channel. There are no extra permissions to allow or restrict access to each module -- if a Twitch user has access, they have access to all modules. These need to be the same as the modules in the Pogly server.
 
 ### TWITCH_CLIENT_ID & TWITCH_CLIENT_SECRET
 
-Go to the Twitch Developer Dashboard.
-Create a new application and add `http://localhost:3000/login/twitch/redirect` to the OAuth Redirect URLs.
+Create a [Twitch application](https://dev.twitch.tv/console/apps/create) and add `<host>/login/twitch/callback` to the OAuth Redirect URLs, with `<host>` replaced by the base URL that the proxy will be accessible at (`http://localhost:3000` for local development).
 
 Copy the generated Client ID and Client Secret and add them to the environment variables.
 
@@ -81,7 +78,7 @@ You also need to create a `data.json` file in the same directory with the follow
 }
 ```
 
-To allow users to login, you need to add their twitch user id to the `data.json` file. The easiest way to do this is looking it up [here](https://www.streamweasels.com/tools/convert-twitch-username-%20to-user-id/) via their username. You'll need to add the username and token properties too but just leave them blank.
+To allow users to login, you need to add their Twitch user id to the `users` object in the `data.json` file. The easiest way to do this is [looking it up](https://www.streamweasels.com/tools/convert-twitch-username-%20to-user-id/) via their username. The user id should be the key to an object containing a `username` and `token` property -- you can populate the `username` property as a reference for who the ID is, and leave the `token` an empty string.
 
 ```json
 {
@@ -96,16 +93,18 @@ To allow users to login, you need to add their twitch user id to the `data.json`
 
 ## Setting up modules
 
-When you access Pogly for the first time, you'll be prompted to create a module. It's important that you DON'T enable authentication or strict mode. You can create & swap between multiple modules without having to login again. You can also create a new module at any time, as long as the module name is specified in the `POGLY_MODULES` & `MODULES` environment variables.
+When you access Pogly for the first time, you'll be prompted to configure a module -- this will be the first module you defined in `POGLY_MODULES`. You must NOT enable authentication or strict mode for any modules behind the proxy -- the proxy handles access control.
+
+Once the first module is configured, you'll see an option in the UI to swap to any other modules you provided in `POGLY_MODULES` (it is recommended you swap to these and configure them during first-time setup so your Twitch account is stored as the "owner" of the modules).
+
+You can also add new modules at any time -- make sure they're added to both the Pogly `MODULES` environment variable and the proxy's `POGLY_MODULES` environment variable.
 
 ## Developing locally
 
-To run it locally, copy .env.example to .env and use the [environment variable guide](#Environment-Variables) above to set the variables.
+Make sure you're running Node.js matching the version specified in [`.nvmrc`](.nvmrc). Then, install the required dependencies for the project with `npm ci`.
 
-If you don't have a Pogly server running already, you can use the docker-compose.yaml file in this repository to start one.
+To run the proxy locally, copy [`.env.example`](.env.example) to `.env` and use the [environment variable guide](#Environment-Variables) above to set the variables. Then, start the proxy with `npm start`.
 
-```bash
-docker compose up -d
-```
+If you don't have a Pogly server running already, you can use the provided [`docker-compose.yaml`](docker-compose.yaml) file in this repository to start one with `docker compose up -d`. If you're using this, make sure the `MODULES` match your `POGLY_MODULES` in the `.env` file.
 
 You'll also need to create a data.json file in the same directory as the docker-compose.yaml file with your twitch user id. You can follow the instructions [here](#datajson) to do this.
