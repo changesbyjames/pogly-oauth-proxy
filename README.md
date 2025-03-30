@@ -34,8 +34,7 @@ services:
       DATA_PATH: file:///proxy/
 
       # npx -y @fastify/secure-session | node -e "console.log(fs.readFileSync(0).toString('hex'))"
-      SESSION_SECRET: "32_bytes_of_random_characters"
-
+      SESSION_SECRET: "32_bytes_of_random_hex_data"
       POGLY_MODULES: "pogly module2 module3"
       TWITCH_CLIENT_ID: "your_twitch_client_id"
       TWITCH_CLIENT_SECRET: "your_twitch_client_secret"
